@@ -1,6 +1,6 @@
 ---
 name: clawAgentSync
-description: Export and import OpenClaw agent configurations. Use when: (1) exporting specific agent or all agents, (2) importing from local file or HTTP URL, (3) backing up or sharing agent settings
+description: "Export and import OpenClaw agent configurations. Use when: (1) exporting specific agent or all agents, (2) importing from local file or HTTP URL, (3) backing up or sharing agent settings"
 ---
 
 # Claw Agent Sync - Export & Import
