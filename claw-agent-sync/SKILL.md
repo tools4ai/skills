@@ -10,17 +10,26 @@ description: "Export and import OpenClaw agent configurations. Use when: (1) exp
 ### Export Agent
 
 ```bash
-# Export all agents (to current directory)
+# Export all agents as ZIP (to current directory)
 ~/.openclaw/skills/agent-sync/scripts/export_agent.sh
 
-# Export all agents (to specified path)
+# Export all agents as ZIP (to specified path)
 ~/.openclaw/skills/agent-sync/scripts/export_agent.sh "" /path/to/agents.zip
 
-# Export specific agent
+# Export all agents as directory
+~/.openclaw/skills/agent-sync/scripts/export_agent.sh -d
+
+# Export all agents to specified directory
+~/.openclaw/skills/agent-sync/scripts/export_agent.sh -d /path/to/agents
+
+# Export specific agent as ZIP
 ~/.openclaw/skills/agent-sync/scripts/export_agent.sh claw1
 
-# Export specific agent to specified path
-~/.openclaw/skills/agent-sync/scripts/export_agent.sh claw1 /tmp/claw1.zip
+# Export specific agent as directory
+~/.openclaw/skills/agent-sync/scripts/export_agent.sh claw1 -d
+
+# Export specific agent to specified directory
+~/.openclaw/skills/agent-sync/scripts/export_agent.sh claw1 /tmp/claw1 -d
 ```
 
 Exported package contains:
@@ -38,11 +47,17 @@ Exported package contains:
 ### Import Agent
 
 ```bash
-# Import from local package
+# Import from local ZIP package
 ~/.openclaw/skills/agent-sync/scripts/import_agent.sh /path/to/agents.zip
 
 # Import from HTTP URL
 ~/.openclaw/skills/agent-sync/scripts/import_agent.sh https://example.com/agents.zip
+
+# Import from directory (auto-detects structure)
+~/.openclaw/skills/agent-sync/scripts/import_agent.sh /path/to/agents-directory
+
+# Import from single agent directory
+~/.openclaw/skills/agent-sync/scripts/import_agent.sh /path/to/claw1
 ```
 
 Import process:

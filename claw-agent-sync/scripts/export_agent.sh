@@ -1,17 +1,52 @@
 #!/bin/bash
 # OpenClaw Agent Export Script
-# Usage: export_agent.sh [agent_name] [output_path]
+# Usage: export_agent.sh [agent_name] [output_path] [-d|--directory]
 # Without agent name, exports all agents
+# With -d|--directory, exports as directory instead of zip
 
 set -e
 
-AGENT_NAME="$1"
-OUTPUT_PATH="${2:-./agent-backup-$(date +%Y%m%d-%H%M%S).zip}"
+# Parse arguments
+AGENT_NAME=""
+OUTPUT_PATH=""
+EXPORT_AS_DIR=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--directory)
+            EXPORT_AS_DIR=true
+            shift
+            ;;
+        *)
+            if [ -z "$AGENT_NAME" ]; then
+                AGENT_NAME="$1"
+            elif [ -z "$OUTPUT_PATH" ]; then
+                OUTPUT_PATH="$1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Set default output path
+if [ -z "$OUTPUT_PATH" ]; then
+    if [ "$EXPORT_AS_DIR" = true ]; then
+        OUTPUT_PATH="./agent-export-$(date +%Y%m%d-%H%M%S)"
+    else
+        OUTPUT_PATH="./agent-backup-$(date +%Y%m%d-%H%M%S).zip"
+    fi
+fi
+
 OPENCLAW_DIR="$HOME/.openclaw"
 AGENTS_DIR="$OPENCLAW_DIR/agents"
 
 echo "📦 Exporting OpenClaw Agent configuration..."
 echo "📍 Output: $OUTPUT_PATH"
+if [ "$EXPORT_AS_DIR" = true ]; then
+    echo "📁 Format: Directory"
+else
+    echo "📦 Format: ZIP"
+fi
 
 # Create temp directory
 TEMP_DIR=$(mktemp -d)
@@ -81,10 +116,24 @@ else
     export_single_agent "$AGENT_NAME" "$TEMP_DIR/agent"
 fi
 
-# Create zip package
-cd "$TEMP_DIR"
-zip -r "$OUTPUT_PATH" .
+# Export based on format
+if [ "$EXPORT_AS_DIR" = true ]; then
+    # Export as directory
+    if [ -z "$AGENT_NAME" ]; then
+        cp -r "$TEMP_DIR/agents" "$OUTPUT_PATH"
+    else
+        mkdir -p "$OUTPUT_PATH"
+        cp -r "$TEMP_DIR/agent"/* "$OUTPUT_PATH/"
+    fi
+    echo "✅ Export complete: $OUTPUT_PATH"
+    echo "📊 Contents:"
+    ls -la "$OUTPUT_PATH"
+else
+    # Create zip package
+    cd "$TEMP_DIR"
+    zip -r "$OUTPUT_PATH" .
 
-echo "✅ Export complete: $OUTPUT_PATH"
-echo "📊 Contents:"
-unzip -l "$OUTPUT_PATH" | tail -n +3
+    echo "✅ Export complete: $OUTPUT_PATH"
+    echo "📊 Contents:"
+    unzip -l "$OUTPUT_PATH" | tail -n +3
+fi

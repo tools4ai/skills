@@ -1,6 +1,7 @@
 #!/bin/bash
 # OpenClaw Agent Import Script
-# Usage: import_agent.sh <source_path_or_url>
+# Usage: import_agent.sh <source_path_or_url|directory>
+# Supports importing from local file, URL, or directory
 
 set -e
 
@@ -10,7 +11,7 @@ AGENTS_DIR="$OPENCLAW_DIR/agents"
 
 if [ -z "$SOURCE" ]; then
     echo "❌ Please specify import source"
-    echo "Usage: import_agent.sh <local_file|URL>"
+    echo "Usage: import_agent.sh <local_file|URL|directory>"
     exit 1
 fi
 
@@ -23,38 +24,63 @@ if [[ "$SOURCE" =~ ^https?:// ]]; then
     echo "🌐 Downloading from URL: $SOURCE"
     curl -L -o "$TEMP_DIR/agent.zip" "$SOURCE"
     ZIP_FILE="$TEMP_DIR/agent.zip"
+    if [ ! -f "$ZIP_FILE" ]; then
+        echo "❌ Download failed"
+        exit 1
+    fi
+    echo "📦 Extracting..."
+    unzip -o "$ZIP_FILE" -d "$TEMP_DIR/extracted" > /dev/null
+    EXTRACTED_DIR="$TEMP_DIR/extracted"
+elif [ -d "$SOURCE" ]; then
+    echo "📁 Importing from directory: $SOURCE"
+    # Check if it's a single agent directory or contains agents/
+    if [ -d "$SOURCE/agents" ]; then
+        # Multiple agents: source/agents/agent1/, source/agents/agent2/
+        EXTRACTED_DIR="$SOURCE"
+        AGENT_TYPE="multiple"
+    elif [ -f "$SOURCE/IDENTITY.md" ]; then
+        # Single agent in root: source/IDENTITY.md
+        EXTRACTED_DIR="$SOURCE"
+        AGENT_TYPE="single_root"
+    elif [ -d "$SOURCE/agent" ] && [ -f "$SOURCE/agent/IDENTITY.md" ]; then
+        # Single agent in subdir: source/agent/IDENTITY.md
+        EXTRACTED_DIR="$SOURCE"
+        AGENT_TYPE="single_subdir"
+    else
+        echo "❌ Invalid directory format: no agent files found"
+        exit 1
+    fi
 else
-    echo "📂 Loading from local: $SOURCE"
+    echo "📂 Loading from local file: $SOURCE"
     ZIP_FILE="$SOURCE"
+    if [ ! -f "$ZIP_FILE" ]; then
+        echo "❌ File not found: $ZIP_FILE"
+        exit 1
+    fi
+    echo "📦 Extracting..."
+    unzip -o "$ZIP_FILE" -d "$TEMP_DIR/extracted" > /dev/null
+    EXTRACTED_DIR="$TEMP_DIR/extracted"
 fi
 
-if [ ! -f "$ZIP_FILE" ]; then
-    echo "❌ File not found: $ZIP_FILE"
-    exit 1
-fi
+# Validate package (only for zip-based import)
+if [ -z "$AGENT_TYPE" ]; then
+    # Validate package - support multiple structures
+    # 1. agents/<agent>/ (multiple agents)
+    # 2. agent/<files> (single agent, subdirectory)
+    # 3. <files> (single agent, root directory)
+        if [ -d "$EXTRACTED_DIR/agents" ]; then
+            AGENT_TYPE="multiple"
+        elif [ -d "$EXTRACTED_DIR/agent" ] && [ -f "$EXTRACTED_DIR/agent/IDENTITY.md" ]; then
+            AGENT_TYPE="single_subdir"
+        elif [ -f "$EXTRACTED_DIR/IDENTITY.md" ]; then
+            AGENT_TYPE="single_root"
+        else
+            echo "❌ Invalid agent package: no identity files found"
+            exit 1
+        fi
+    fi
 
-# Extract
-echo "📦 Extracting..."
-unzip -o "$ZIP_FILE" -d "$TEMP_DIR/extracted" > /dev/null
-
-EXTRACTED_DIR="$TEMP_DIR/extracted"
-
-# Validate package - support multiple structures
-# 1. agents/<agent>/ (multiple agents)
-# 2. agent/<files> (single agent, subdirectory)
-# 3. <files> (single agent, root directory)
-if [ -d "$EXTRACTED_DIR/agents" ]; then
-    AGENT_TYPE="multiple"
-elif [ -d "$EXTRACTED_DIR/agent" ] && [ -f "$EXTRACTED_DIR/agent/IDENTITY.md" ]; then
-    AGENT_TYPE="single_subdir"
-elif [ -f "$EXTRACTED_DIR/IDENTITY.md" ]; then
-    AGENT_TYPE="single_root"
-else
-    echo "❌ Invalid agent package: no identity files found"
-    exit 1
-fi
-
-# Determine single or multiple agents
+    # Determine single or multiple agents
 if [ "$AGENT_TYPE" = "multiple" ]; then
     AGENTS_TO_IMPORT=$(ls -1 "$EXTRACTED_DIR/agents/" 2>/dev/null)
     echo "📋 Found multiple agents: $AGENTS_TO_IMPORT"
