@@ -43,8 +43,12 @@ CONFIG_FILE="$OPENCLAW_DIR/openclaw.json"
 
 # Try to get agents directory from config, fallback to default
 if [ -f "$CONFIG_FILE" ] && command -v jq &> /dev/null; then
-    # Get first agent's workspace to derive base agents directory
-    AGENTS_DIR=$(cat "$CONFIG_FILE" | jq -r '.agents[0].workspace' 2>/dev/null | sed 's/\/[^/]*$//')
+    # If AGENT_NAME specified, find that agent's workspace; otherwise use first agent with workspace
+    if [ -n "$AGENT_NAME" ]; then
+        AGENTS_DIR=$(cat "$CONFIG_FILE" | jq -r ".agents.list[] | select(.name == \"$AGENT_NAME\") | .workspace" 2>/dev/null | sed 's/\/[^/]*$//')
+    else
+        AGENTS_DIR=$(cat "$CONFIG_FILE" | jq -r '[.agents.list[] | select(.workspace)] | if length > 0 then .[0].workspace else null end' 2>/dev/null | sed 's/\/[^/]*$//')
+    fi
     if [ -z "$AGENTS_DIR" ] || [ "$AGENTS_DIR" = "null" ]; then
         AGENTS_DIR="$OPENCLAW_DIR/agents"
     fi
@@ -52,7 +56,7 @@ else
     AGENTS_DIR="$OPENCLAW_DIR/agents"
 fi
 
-echo "📦 Exporting OpenClaw Agent configuration..."
+echo "📦 Exporting OpenClaw Agent configuration from $AGENTS_DIR..."
 echo "📍 Output: $OUTPUT_PATH"
 if [ "$EXPORT_AS_DIR" = true ]; then
     echo "📁 Format: Directory"
