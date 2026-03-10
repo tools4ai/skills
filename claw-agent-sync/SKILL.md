@@ -32,17 +32,7 @@ description: "Export and import OpenClaw agent configurations. Use when: (1) exp
 ~/.openclaw/skills/agent-sync/scripts/export_agent.sh claw1 /tmp/claw1 -d
 ```
 
-Exported package contains:
-- `agents/<agent-name>/` - Each agent's config directory
-  - `IDENTITY.md` - Agent identity definition
-  - `SOUL.md` - Agent personality/behavior
-  - `USER.md` - User information
-  - `AGENTS.md` - Agent behavior guidelines
-  - `TOOLS.md` - Tools configuration
-  - `HEARTBEAT.md` - Heartbeat configuration
-  - `BOOTSTRAP.md` - Bootstrap configuration
-  - `agent/` - Agent runtime configuration
-  - `agent-info.json` - Metadata
+Exported package contains the agent configuration files (see Agent Files Location below).
 
 ### Import Agent
 
@@ -65,6 +55,38 @@ Import process:
 2. Check if each agent already exists
 3. If exists → prompt user to skip
 4. If not exists → auto import
+
+## Agent Directory Configuration
+
+OpenCLAW agent files are located in the agent workspace directory. You can determine this directory dynamically:
+
+### Default Location
+```
+~/.openclaw/agents/<agent-name>/
+```
+
+### Dynamic Lookup (from OpenCLAW config)
+Read the agent's workspace from `~/.openclaw/openclaw.json`:
+
+```bash
+# Get workspace for specific agent
+cat ~/.openclaw/openclaw.json | jq -r '.agents[] | select(.id=="<agent-name>") | .workspace'
+
+# Get all agent directories
+cat ~/.openclaw/openclaw.json | jq -r '.agents[] | "\(.id): \(.workspace)"'
+```
+
+### Agent Files Location
+Each agent directory contains:
+- `IDENTITY.md` - Agent identity definition
+- `SOUL.md` - Agent personality/behavior
+- `USER.md` - User information
+- `AGENTS.md` - Agent behavior guidelines
+- `TOOLS.md` - Tools configuration
+- `HEARTBEAT.md` - Heartbeat configuration
+- `BOOTSTRAP.md` - Bootstrap configuration
+- `agent/` - Agent runtime configuration
+- `agent-info.json` - Metadata
 
 ## Notes
 

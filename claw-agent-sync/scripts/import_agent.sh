@@ -7,7 +7,18 @@ set -e
 
 SOURCE="$1"
 OPENCLAW_DIR="$HOME/.openclaw"
-AGENTS_DIR="$OPENCLAW_DIR/agents"
+CONFIG_FILE="$OPENCLAW_DIR/openclaw.json"
+
+# Try to get agents directory from config, fallback to default
+if [ -f "$CONFIG_FILE" ] && command -v jq &> /dev/null; then
+    # Get first agent's workspace to derive base agents directory
+    AGENTS_DIR=$(cat "$CONFIG_FILE" | jq -r '.agents[0].workspace' 2>/dev/null | sed 's/\/[^/]*$//')
+    if [ -z "$AGENTS_DIR" ] || [ "$AGENTS_DIR" = "null" ]; then
+        AGENTS_DIR="$OPENCLAW_DIR/agents"
+    fi
+else
+    AGENTS_DIR="$OPENCLAW_DIR/agents"
+fi
 
 if [ -z "$SOURCE" ]; then
     echo "❌ Please specify import source"
