@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+export2image
+*.tsbuildinfo
+
+# Local pi config
+.pi/
+
+# Logs
+*.log
+
+package-lock.json
+main.js
